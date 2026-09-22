@@ -34,7 +34,7 @@ Sigue estos pasos exactos para descargar el código fuente y levantar la arquite
 Dado que este proyecto utiliza submódulos de Git, debes clonarlo de forma recursiva para descargar también el código de las carpetas internas de cada microservicio:
 
 ```bash
-git clone --recurse-submodules [https://github.com/racoonius-programmer/wepay-orquestador.git](https://github.com/racoonius-programmer/wepay-orquestador.git)
+git clone --recurse-submodules https://github.com/racoonius-programmer/wepay-orquestador.git
 cd wepay-orquestador
 
 ```

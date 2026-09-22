@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  ms-usuarios:
+    build: ./ms-clientes
+    container_name: ms-clientes
+    ports:
+      - "8083:8083"
+
+  ms-catalogo:
+    build: ./wepay-catalogo
+    container_name: ms-catalogo
+    ports:
+      - "8084:8084"
+
+  ms-pedidos:
+    build: ./ms-pedidos
+    container_name: ms-pedidos
+    ports:
+      - "8085:8085"
+
+  api-bff:
+    build: ./api
+    container_name: api-bff
+    ports:
+      - "8081:8081"
+    environment:
+      # Credenciales inyectadas desde el archivo .env
+      - ENTRA_ISSUER_URI=${ENTRA_ISSUER_URI}
+      - ENTRA_API_CLIENT_ID=${ENTRA_API_CLIENT_ID}
+      # Redirección interna de Docker (No usan localhost, usan el nombre del contenedor)
+      - MICROSERVICES_USUARIOS_BASE_URL=http://ms-usuarios:8083
+      - MICROSERVICES_PRODUCTOS_BASE_URL=http://ms-catalogo:8084
+      - MICROSERVICES_PEDIDOS_BASE_URL=http://ms-pedidos:8085
+    depends_on:
+      - ms-usuarios
+      - ms-catalogo
+      - ms-pedidos

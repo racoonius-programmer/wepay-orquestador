@@ -33,3 +33,16 @@ services:
       - ms-usuarios
       - ms-catalogo
       - ms-pedidos
+
+  frontend:
+    build: ../app-test-azure
+    container_name: frontend
+    ports:
+      - "5173:80"
+    environment:
+      - VITE_ENTRA_TENANT_ID=${VITE_ENTRA_TENANT_ID}
+      - VITE_SPA_CLIENT_ID=${VITE_SPA_CLIENT_ID}
+      - VITE_API_CLIENT_ID=${VITE_API_CLIENT_ID}
+      - VITE_BFF_BASE_URL=${VITE_BFF_BASE_URL}
+    depends_on:
+      - api-bff

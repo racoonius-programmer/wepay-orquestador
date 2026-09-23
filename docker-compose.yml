@@ -18,17 +18,18 @@ services:
       - "8085:8085"
 
   api-bff:
-    build: ./api
-    container_name: api-bff
-    ports:
-      - "8081:8081"
-    environment:
-      - ENTRA_ISSUER_URI=${ENTRA_ISSUER_URI}
-      - ENTRA_API_CLIENT_ID=${ENTRA_API_CLIENT_ID}
-      - MS_USUARIOS_URL=http://ms-usuarios:8083
-      - MS_PRODUCTOS_URL=http://ms-catalogo:8084
-      - MS_PEDIDOS_URL=http://ms-pedidos:8085
-    depends_on:
-      - ms-usuarios
-      - ms-catalogo
-      - ms-pedidos
+  build: ./api
+  container_name: api-bff
+  ports:
+    - "8081:8081"
+  environment:
+    - ENTRA_ISSUER_URI=${ENTRA_ISSUER_URI}
+    - ENTRA_API_CLIENT_ID=${ENTRA_API_CLIENT_ID}
+    - JAVA_TOOL_OPTIONS=-Djava.net.preferIPv4Stack=true
+    - MS_USUARIOS_URL=http://ms-usuarios:8083
+    - MS_PRODUCTOS_URL=http://ms-catalogo:8084
+    - MS_PEDIDOS_URL=http://ms-pedidos:8085
+  depends_on:
+    - ms-usuarios
+    - ms-catalogo
+    - ms-pedidos

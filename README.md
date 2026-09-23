@@ -49,14 +49,26 @@ El BFF requiere variables de configuración para validar la autenticación. En l
 ENTRA_ISSUER_URI=[https://login.microsoftonline.com/](https://login.microsoftonline.com/)<TU_TENANT_ID_AQUI>/v2.0
 ENTRA_API_CLIENT_ID=<TU_CLIENT_ID_AQUI>
 
+VITE_ENTRA_TENANT_ID=...
+VITE_SPA_CLIENT_ID=...
+VITE_API_CLIENT_ID=...
+VITE_BFF_BASE_URL=http://localhost:8081 (puerto por defecto)
+
 ```
 
 ### 3. Levantar los Contenedores
 
-Abre tu terminal en la raíz del proyecto y ejecuta el siguiente comando. Docker se encargará de descargar la imagen base (Eclipse Temurin Alpine), leer los archivos compilados `.jar` y levantar los contenedores en el orden correcto.
+Abre tu terminal en la raíz del proyecto y ejecuta el siguiente comando. Docker se encargará de descargar la imagen desde Docker Hub, descargar los archivos y ejecutarlos en los puertos establecidos.
+- Front: Puerto 5173
+- BFF: 8081
+- MS-Clientes: 8083
+- MS-Catalogo: 8084
+- MS-Pedidos: 8085
+(Mismos puertos se usan en Docker)
 
 ```bash
-docker compose up --build
+docker compose pull
+docker compose up --d
 
 ```
 
@@ -66,11 +78,16 @@ docker compose up --build
 
 ## 🧪 Cómo Probar el Entorno
 
+Entra al Front mediante localhost (5173 es el puerto por defecto)  
+```bash
+http://localhost:5173/
+```
 Todas las llamadas hacia el backend desde el cliente (Frontend/Postman/cURL) deben dirigirse exclusivamente al puerto del BFF (**8081**).
 
 Asegúrate de generar un token JWT válido de usuario desde la plataforma de Microsoft Entra y utiliza ese token como `Bearer Auth`.
 
 **Ejemplo de prueba de integridad (Obtener historial de pedidos):**
+(Solo funciona si el Front corre en local)
 
 ```bash
 curl -i http://localhost:8081/api/pedidos \
@@ -81,10 +98,4 @@ curl -i http://localhost:8081/api/pedidos \
 ---
 
 ## 🛠️ Notas de Desarrollo
-
-* **Actualización de Submódulos:** Si otro miembro del equipo actualizó el código en alguno de los repositorios individuales, puedes sincronizar tu orquestador ejecutando `git submodule update --remote`.
 * **Detener los servicios:** Para apagar el ecosistema de forma limpia y liberar los puertos, presiona `Ctrl + C` en la terminal donde se ejecutan los logs, o ejecuta `docker compose down` en una terminal paralela.
-
-```
-
-```

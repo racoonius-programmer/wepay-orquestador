@@ -1,24 +1,24 @@
 services:
   ms-usuarios:
-    build: ./ms-clientes
+    image: joseave/ms-clientes:latest
     container_name: ms-clientes
     ports:
       - "8083:8083"
 
   ms-catalogo:
-    build: ./wepay-catalogo
+    image: joseave/wepay-catalogo:latest
     container_name: ms-catalogo
     ports:
       - "8084:8084"
 
   ms-pedidos:
-    build: ./ms-pedidos
+    image: joseave/wepay-ms-pedidos:latest
     container_name: ms-pedidos
     ports:
       - "8085:8085"
 
   api-bff:
-    build: ./api
+    image: joseave/wepay-bff:latest
     container_name: api-bff
     ports:
       - "8081:8081"
@@ -35,7 +35,7 @@ services:
       - ms-pedidos
 
   frontend:
-    build: ../app-test-azure
+    image: joseave/wepay-frontend:latest
     container_name: frontend
     ports:
       - "5173:80"

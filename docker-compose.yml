@@ -1,21 +1,138 @@
+version: '3.8'
+
 services:
+  # ==========================================
+  # 1. BASES DE DATOS
+  # ==========================================
+  oracle-db:
+    image: gvenzl/oracle-xe:21-slim
+    container_name: oracle-db
+    environment:
+      - ORACLE_PASSWORD=oracle
+    ports:
+      - "1521:1521"
+    networks:
+      - wepay-net
+
+  # ==========================================
+  # 2. INFRAESTRUCTURA RABBITMQ (1 Nodo Ligero)
+  # ==========================================
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    hostname: rabbitmq
+    environment:
+      - RABBITMQ_DEFAULT_USER=admin
+      - RABBITMQ_DEFAULT_PASS=admin
+    ports:
+      - "15672:15672" # Management UI
+      - "5672:5672"   # AMQP
+    networks:
+      - wepay-net
+
+  # ==========================================
+  # 3. INFRAESTRUCTURA KAFKA (1 ZK + 1 Broker Ligero)
+  # ==========================================
+  zookeeper:
+    image: bitnami/zookeeper:latest
+    container_name: zookeeper
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+    ports:
+      - "2181:2181"
+    networks:
+      - wepay-net
+
+  kafka:
+    image: bitnami/kafka:latest
+    container_name: kafka
+    environment:
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+      - KAFKA_CFG_BROKER_ID=1
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
+      - ALLOW_PLAINTEXT_LISTENER=yes
+      # Importante para 1 solo nodo: evita errores al crear tópicos internos
+      - KAFKA_CFG_OFFSETS_TOPIC_REPLICATION_FACTOR=1 
+    depends_on:
+      - zookeeper
+    networks:
+      - wepay-net
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    ports:
+      - "8080:8080"
+    environment:
+      - KAFKA_CLUSTERS_0_NAME=wepay-cluster
+      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:9092
+      - KAFKA_CLUSTERS_0_ZOOKEEPER=zookeeper:2181
+    depends_on:
+      - kafka
+    networks:
+      - wepay-net
+
+  # ==========================================
+  # 4. MICROSERVICIOS WEPAY
+  # ==========================================
   ms-usuarios:
     image: joseave/ms-clientes:latest
     container_name: ms-clientes
     ports:
       - "8083:8083"
+    networks:
+      - wepay-net
 
   ms-catalogo:
     image: joseave/wepay-catalogo:latest
     container_name: ms-catalogo
     ports:
       - "8084:8084"
+    networks:
+      - wepay-net
 
   ms-pedidos:
     image: joseave/wepay-ms-pedidos:latest
     container_name: ms-pedidos
     ports:
       - "8085:8085"
+    depends_on:
+      - oracle-db
+      - rabbitmq
+      - kafka
+    networks:
+      - wepay-net
+
+  ms-auditoria:
+    image: joseave/wepay-ms-auditoria:latest
+    container_name: ms-auditoria
+    ports:
+      - "8086:8086"
+    depends_on:
+      - oracle-db
+      - kafka
+    networks:
+      - wepay-net
+
+  ms-reportes:
+    image: joseave/wepay-ms-reportes:latest
+    container_name: ms-reportes
+    ports:
+      - "8087:8087"
+    depends_on:
+      - oracle-db
+      - kafka
+    networks:
+      - wepay-net
+
+  ms-notificaciones:
+    image: joseave/wepay-ms-notificaciones:latest
+    container_name: ms-notificaciones
+    depends_on:
+      - rabbitmq
+    networks:
+      - wepay-net
 
   api-bff:
     image: joseave/wepay-bff:latest
@@ -26,23 +143,23 @@ services:
       - ENTRA_ISSUER_URI=${ENTRA_ISSUER_URI}
       - ENTRA_API_CLIENT_ID=${ENTRA_API_CLIENT_ID}
       - JAVA_TOOL_OPTIONS=-Djava.net.preferIPv4Stack=true
-      - MS_USUARIOS_URL=http://ms-usuarios:8083
+      - MS_USUARIOS_URL=http://ms-clientes:8083
       - MS_PRODUCTOS_URL=http://ms-catalogo:8084
       - MS_PEDIDOS_URL=http://ms-pedidos:8085
+      - MS_AUDITORIA_URL=http://ms-auditoria:8086
+      - MS_REPORTES_URL=http://ms-reportes:8087
     depends_on:
       - ms-usuarios
       - ms-catalogo
       - ms-pedidos
+      - ms-auditoria
+      - ms-reportes
+    networks:
+      - wepay-net
 
-  frontend:
-    image: joseave/wepay-frontend:latest
-    container_name: frontend
-    ports:
-      - "5173:80"
-    environment:
-      - VITE_ENTRA_TENANT_ID=${VITE_ENTRA_TENANT_ID}
-      - VITE_SPA_CLIENT_ID=${VITE_SPA_CLIENT_ID}
-      - VITE_API_CLIENT_ID=${VITE_API_CLIENT_ID}
-      - VITE_BFF_BASE_URL=${VITE_BFF_BASE_URL}
-    depends_on:
-      - api-bff
+# ==========================================
+# RED PERSONALIZADA
+# ==========================================
+networks:
+  wepay-net:
+    driver: bridge
